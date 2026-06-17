@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#8FA882">
+  <title>動物別恋愛タイプ診断</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --sage: #8FA882; --sage-light: #EEF2EB; --sage-dark: #4A5E42;
+      --blush: #D4A69A; --blush-light: #F7EDEA; --blush-dark: #8C5547;
+      --sand: #C4B49A; --sand-light: #F5F0E8; --sand-dark: #7A6A52;
+      --cream: #FAF8F4;
+      --text: #2C2A26; --text-sub: #6B6660; --text-hint: #A09C96;
+      --border: rgba(100,90,80,0.12); --border-mid: rgba(100,90,80,0.22);
+      --r: 10px; --r-lg: 16px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --cream: #1E1C18;
+        --text: #F0EDE8; --text-sub: #A09C96; --text-hint: #6B6660;
+        --border: rgba(255,245,235,0.1); --border-mid: rgba(255,245,235,0.18);
+        --sage-light: #2A3328; --sand-light: #2E2A22; --blush-light: #312420;
+      }
+    }
+    html, body { min-height: 100%; background: var(--cream); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif; }
+    .app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding-bottom: 2rem; }
+    .screen { display: none; padding: 1.5rem 1.25rem; }
+    .screen.active { display: block; }
+
+    /* TOP */
+    .logo-area { text-align: center; padding: 2.5rem 0 2rem; }
+    .logo-icon { width: 72px; height: 72px; border-radius: 22px; background: var(--sage-light); border: 0.5px solid var(--sage); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
+    .app-title { font-size: 20px; font-weight: 500; letter-spacing: -0.3px; margin-bottom: 8px; }
+    .app-sub { font-size: 13px; color: var(--text-sub); line-height: 1.8; }
+    .mode-card { background: var(--cream); border: 0.5px solid var(--border-mid); border-radius: var(--r-lg); padding: 1.1rem 1.25rem; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: border-color 0.15s; }
+    .mode-card:hover { border-color: var(--sage); }
+    .mode-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mode-icon.sage { background: var(--sage-light); }
+    .mode-icon.blush { background: var(--blush-light); }
+    .mode-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+    .mode-desc { font-size: 12px; color: var(--text-sub); line-height: 1.5; }
+
+    /* QUIZ */
+    .prog-bar { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 8px; }
+    .prog-fill { height: 3px; background: var(--sage); border-radius: 2px; transition: width 0.35s ease; }
+    .prog-label { font-size: 11px; color: var(--text-hint); letter-spacing: 0.3px; margin-bottom: 1.5rem; }
+    .q-text { font-size: 17px; font-weight: 500; line-height: 1.6; margin-bottom: 1.25rem; }
+    .opt-btn { width: 100%; text-align: left; padding: 13px 15px; background: var(--cream); border: 0.5px solid var(--border-mid); border-radius: var(--r); font-size: 14px; color: var(--text); cursor: pointer; line-height: 1.5; margin-bottom: 8px; transition: background 0.15s, border-color 0.15s; font-family: inherit; }
+    .opt-btn:hover { background: var(--sage-light); }
+    .opt-btn.selected { border-color: var(--sage); background: var(--sage-light); color: var(--sage-dark); font-weight: 500; }
+    .nav-row { display: flex; gap: 8px; margin-top: 1rem; }
+    .btn-back { padding: 13px 18px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--r); font-size: 13px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+    .btn-next { flex: 1; padding: 13px; background: var(--sage); color: #fff; border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+    .btn-next:disabled { opacity: 0.35; cursor: default; }
+
+    /* SHARE */
+    .share-url { font-size: 11px; padding: 12px; border-radius: var(--r); word-break: break-all; background: var(--sand-light); color: var(--text-sub); border: 0.5px solid var(--border); margin-bottom: 12px; line-height: 1.6; }
+    .btn-line { width: 100%; padding: 13px; background: #06C755; color: #fff; border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+    .btn-copy { width: 100%; padding: 12px; background: var(--sand-light); color: var(--text); border: 0.5px solid var(--border-mid); border-radius: var(--r); font-size: 13px; cursor: pointer; font-family: inherit; }
+
+    /* RESULT */
+    .result-hero { text-align: center; padding: 1.5rem 0 1.25rem; }
+    .animal-badge { width: 96px; height: 96px; border-radius: 30px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; }
+    .animal-name { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+    .animal-catch { font-size: 12px; color: var(--blush-dark); letter-spacing: 0.2px; }
+    .result-card { background: var(--cream); border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1rem 1.1rem; margin-bottom: 10px; }
+    .result-card .rlabel { font-size: 11px; color: var(--text-hint); letter-spacing: 0.3px; margin-bottom: 6px; }
+    .result-card .rbody { font-size: 13px; color: var(--text-sub); line-height: 1.7; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .tag { font-size: 11px; padding: 4px 10px; border-radius: 99px; background: var(--sand-light); color: var(--sand-dark); border: 0.5px solid var(--sand); }
+    .gap-card { background: var(--sage-light); border: 0.5px solid var(--sage); border-radius: var(--r-lg); padding: 1rem 1.1rem; margin-bottom: 10px; }
+    .gap-card .rlabel { font-size: 11px; color: var(--sage-dark); letter-spacing: 0.3px; margin-bottom: 6px; }
+    .gap-card .rbody { font-size: 13px; color: var(--sage-dark); line-height: 1.7; }
+    .duo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .duo-card { background: var(--cream); border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1rem; text-align: center; }
+    .duo-card .dname { font-size: 13px; font-weight: 500; margin-top: 8px; }
+    .duo-card .dlabel { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+    .duo-badge { width: 56px; height: 56px; border-radius: 18px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+    .btn-primary { width: 100%; padding: 13px; background: var(--sage); color: #fff; border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+    .btn-ghost { width: 100%; padding: 12px; background: transparent; border: 0.5px solid var(--border-mid); border-radius: var(--r); font-size: 13px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+    .btn-text { background: none; border: none; font-size: 13px; color: var(--sage); cursor: pointer; text-decoration: underline; font-family: inherit; }
+
+    /* SURVEY */
+    .s-q { font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+    .s-sec { margin-bottom: 1.5rem; }
+    .star-row { display: flex; gap: 8px; }
+    .star { width: 38px; height: 38px; border-radius: 10px; background: var(--sand-light); border: 0.5px solid var(--sand); display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; transition: background 0.15s; }
+    .star.on { background: var(--blush-light); border-color: var(--blush); }
+    .star-label { font-size: 11px; color: var(--text-hint); margin-top: 6px; min-height: 16px; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { padding: 7px 13px; border: 0.5px solid var(--border-mid); border-radius: 99px; font-size: 12px; color: var(--text-sub); cursor: pointer; background: var(--cream); transition: background 0.15s, border-color 0.15s; font-family: inherit; }
+    .chip.on { border-color: var(--sage); background: var(--sage-light); color: var(--sage-dark); }
+    .s-textarea { width: 100%; min-height: 76px; padding: 10px 12px; border: 0.5px solid var(--border-mid); border-radius: var(--r); font-size: 13px; color: var(--text); background: var(--cream); resize: none; font-family: inherit; line-height: 1.5; }
+    .s-textarea:focus { outline: none; border-color: var(--sage); }
+    .hint { font-size: 12px; color: var(--text-hint); text-align: center; margin-top: 0.75rem; line-height: 1.6; }
+    .section-title { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div id="s-top" class="screen active">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <ellipse cx="20" cy="26" rx="10" ry="9" fill="#8FA882" opacity="0.2"/>
+          <circle cx="14" cy="16" r="5" fill="#8FA882" opacity="0.35"/>
+          <circle cx="26" cy="16" r="5" fill="#8FA882" opacity="0.35"/>
+          <ellipse cx="20" cy="25" rx="8" ry="7" fill="#8FA882" opacity="0.5"/>
+          <circle cx="17.5" cy="23.5" r="1.8" fill="#4A5E42"/>
+          <circle cx="22.5" cy="23.5" r="1.8" fill="#4A5E42"/>
+          <ellipse cx="20" cy="27" rx="1.3" ry="0.9" fill="#4A5E42"/>
+          <path d="M11 14.5c0-2.5 1.5-4.5 3.5-5.5" stroke="#8FA882" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M29 14.5c0-2.5-1.5-4.5-3.5-5.5" stroke="#8FA882" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="app-title">動物別恋愛タイプ診断</div>
+      <div class="app-sub">自分目線と友達目線、<br>2つの回答からリアルな私を知る。</div>
+    </div>
+    <div class="mode-card" onclick="startMode('self')">
+      <div class="mode-icon sage">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7.5" r="3.5" stroke="#4A5E42" stroke-width="1.5"/><path d="M4 19c0-3.5 3-6 7-6s7 2.5 7 6" stroke="#4A5E42" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="mode-title">自分で答える</div>
+        <div class="mode-desc">あなたの恋愛観について答えます。<br>後で友達にシェアできます。</div>
+      </div>
+    </div>
+    <div class="mode-card" onclick="startFriendMode()">
+      <div class="mode-icon blush">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="8" cy="7" r="3" stroke="#8C5547" stroke-width="1.5"/><circle cx="15.5" cy="6" r="2.5" stroke="#8C5547" stroke-width="1.5"/><path d="M2 18c0-3 2.5-5 6-5s6 2 6 5" stroke="#8C5547" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 13c2 0 4 1.5 4 4" stroke="#8C5547" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="mode-title">友達として答える</div>
+        <div class="mode-desc">「あの子ならどう答えるかな？」<br>と想像しながら答えます。</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="s-quiz" class="screen">
+    <div class="prog-bar"><div class="prog-fill" id="prog"></div></div>
+    <div class="prog-label" id="q-label"></div>
+    <div class="q-text" id="q-text"></div>
+    <div id="q-options"></div>
+    <div class="nav-row">
+      <button class="btn-back" id="btn-back" onclick="prevQ()">← 戻る</button>
+      <button class="btn-next" id="btn-next" onclick="nextQ()" disabled>次へ →</button>
+    </div>
+  </div>
+
+  <div id="s-share" class="screen">
+    <h2 class="section-title">✓ 回答完了！</h2>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:1.5rem;line-height:1.7;">友達にもあなたのことを答えてもらいましょう。リンクをシェアしてください。</p>
+    <div class="share-url" id="share-url-text"></div>
+    <button class="btn-line" onclick="shareLine()">LINEでシェア</button>
+    <button class="btn-copy" onclick="copyUrl()">URLをコピー</button>
+    <p class="hint" style="margin-top:1rem;">友達が答えてくれたら結果ページで診断！</p>
+    <div style="text-align:center;margin-top:1.5rem;">
+      <button class="btn-text" onclick="showSelfResult()">自分の結果だけ先に見る</button>
+    </div>
+  </div>
+
+  <div id="s-result" class="screen"><div id="result-content"></div></div>
+
+  <div id="s-survey" class="screen">
+    <div style="font-size:18px;font-weight:500;margin-bottom:4px;">診断、どうだった？</div>
+    <p style="font-size:12px;color:var(--text-sub);margin-bottom:1.5rem;line-height:1.6;">感想を教えてください。診断の精度アップに活かします。</p>
+    <div class="s-sec">
+      <div class="s-q">どのくらい当てはまってた？</div>
+      <div class="star-row" id="stars">
+        <div class="star" onclick="rateStar(1)">⭐</div>
+        <div class="star" onclick="rateStar(2)">⭐</div>
+        <div class="star" onclick="rateStar(3)">⭐</div>
+        <div class="star" onclick="rateStar(4)">⭐</div>
+        <div class="star" onclick="rateStar(5)">⭐</div>
+      </div>
+      <div class="star-label" id="star-label"></div>
+    </div>
+    <div class="s-sec">
+      <div class="s-q">当てはまったポイントは？<span style="font-weight:400;color:var(--text-hint);font-size:11px;"> 複数OK</span></div>
+      <div class="chip-row" id="match-chips"></div>
+    </div>
+    <div class="s-sec">
+      <div class="s-q">「これは違う」と思ったことはある？</div>
+      <div class="chip-row">
+        <button class="chip" data-v="yes" onclick="selectChip(this,'diff')">あった</button>
+        <button class="chip" data-v="no" onclick="selectChip(this,'diff')">なかった</button>
+        <button class="chip" data-v="partly" onclick="selectChip(this,'diff')">一部だけ</button>
+      </div>
+    </div>
+    <div class="s-sec" id="diff-wrap" style="display:none;">
+      <div class="s-q">どのあたりが違った？</div>
+      <textarea class="s-textarea" id="diff-text" placeholder="例：「束縛が苦手」は当てはまらないかも…"></textarea>
+    </div>
+    <div class="s-sec">
+      <div class="s-q">診断を一言で表すと？</div>
+      <div class="chip-row">
+        <button class="chip" data-v="accurate" onclick="selectChip(this,'imp')">めちゃ当たってる</button>
+        <button class="chip" data-v="mostly" onclick="selectChip(this,'imp')">だいたい合ってる</button>
+        <button class="chip" data-v="mixed" onclick="selectChip(this,'imp')">半々くらい</button>
+        <button class="chip" data-v="miss" onclick="selectChip(this,'imp')">ちょっと違う</button>
+      </div>
+    </div>
+    <button class="btn-primary" id="submit-btn" onclick="submitSurvey()" disabled style="opacity:0.35;cursor:default;">送信する</button>
+  </div>
+
+  <div id="s-thanks" class="screen">
+    <div style="text-align:center;padding:3rem 0;">
+      <div style="font-size:48px;margin-bottom:1rem;">🙏</div>
+      <div style="font-size:18px;font-weight:500;margin-bottom:8px;">ありがとう！</div>
+      <div style="font-size:13px;color:var(--text-sub);line-height:1.7;margin-bottom:2rem;">フィードバック受け取りました。<br>診断をもっと良くするのに役立てます。</div>
+      <button class="btn-ghost" onclick="restart()">もう一度やる</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const QS=[
+  {text:"好きな人ができたとき、まず何をしたくなる？",opts:["すぐ気持ちを伝えたい","相手のことをもっとよく知りたい","友達に相談する","自分の気持ちをじっくり確認する"]},
+  {text:"デートの計画を立てるとき、あなたは？",opts:["サプライズを用意して特別な時間を演出","一緒に決めるのが好き","ノリで決めて気楽に","しっかりリサーチして安心できる場所へ"]},
+  {text:"恋人からの連絡が急に減ったら？",opts:["不安でたまらなくなる","少し寂しいけど様子を見る","「忙しいのかな」と気にしない","自分から理由を聞く"]},
+  {text:"好きな人と距離が縮まってきたとき、どう感じる？",opts:["もっと近づきたくてときめく","安心感が増して嬉しい","少し怖くてペースを落としたくなる","相手の気持ちを確認したくなる"]},
+  {text:"恋愛における「幸せ」ってどんなイメージ？",opts:["ドキドキする瞬間がたくさんある","一緒にいるだけで落ち着く","自由でいられること","長く続く安定した関係"]},
+  {text:"相手の嫌なところを発見したら？",opts:["正直に伝えて改善してほしい","そのままの相手を受け入れたい","気にしない、自分も完璧じゃない","しばらく様子を見て考える"]},
+  {text:"恋人との週末、理想の過ごし方は？",opts:["二人でおしゃれなお出かけ","家でのんびりくつろぐ","それぞれ自分の時間を大切に","友達と一緒に賑やかに"]},
+  {text:"恋人から「もっと甘えて」と言われたら？",opts:["素直にいっぱい甘える","少し照れるけど嬉しい","甘えるのは苦手","どう甘えたらいいか考えてしまう"]},
+  {text:"過去の恋愛を振り返ると、自分はどのタイプ？",opts:["情熱的で全力投球タイプ","気まぐれでマイペースタイプ","尽くして一途なタイプ","慎重で友達から発展するタイプ"]},
+  {text:"「好き」という気持ちはどんなとき生まれる？",opts:["見た瞬間ピンとくる直感","一緒にいる時間が積み重なって","何度も会ううちにじわじわ","共通の価値観を感じたとき"]},
+  {text:"もし恋人が友達の前でよそよそしかったら？",opts:["とても傷ついて悩む","自分から理由を聞く","気にしない、人前では自然な反応","そういうタイプなのかと受け入れる"]},
+  {text:"恋愛でもっとも大切にしていること？",opts:["ときめきとロマンス","信頼と安心感","自由と自分らしさ","お互いへの思いやり"]},
+  {text:"友達から「あなたって恋愛でどんな感じ？」と聞かれたら？",opts:["「激しくて一途！」","「気まぐれかも」","「尽くしすぎちゃう」","「慎重すぎるって言われる」"]},
+  {text:"相手に気持ちが伝わってないと感じたら？",opts:["もっとアピールする","そっと引いて様子を見る","直接「好きだよ」と伝える","サインを送って反応を見る"]},
+  {text:"恋愛で一番怖いことは？",opts:["飽きられること","裏切られること","束縛されること","関係が長続きしないこと"]},
+  {text:"恋人とケンカしたとき、どうする？",opts:["すぐ仲直りしたくて行動する","しばらく距離を置く","冷静に話し合う","我慢して相手に合わせる"]},
+  {text:"理想の告白シーンは？",opts:["サプライズ演出でドラマチックに","二人だけの静かな場所で","気づいたら付き合ってた自然な流れ","長い友達期間を経てじっくり"]},
+  {text:"恋人があなたをどう見ていてほしい？",opts:["誰よりも特別な存在","一番の味方","自由で魅力的な人","いつも側にいてくれる人"]},
+  {text:"長期的な関係で大事なのは？",opts:["いつもときめきがあること","一緒にいて安らげること","お互いの自由を尊重すること","共同で目標に向かえること"]},
+  {text:"恋愛と友情、どちらが欠けても辛い場合は？",opts:["恋愛がないと生きていけない","友情が土台にないと無理","どちらも大切で甲乙つけられない","状況次第で変わる"]}
+];
+
+const DIRECT=[
+  [[0,0,0,0,0,0,0,0,3,0],[0,0,0,0,0,0,0,0,0,3],[0,0,0,0,0,0,3,0,0,0],[0,0,0,0,0,3,0,0,0,0]],
+  [[0,0,3,0,0,0,0,0,0,0],[0,0,0,0,3,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,3,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,0,3,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,3,0],[0,0,0,0,3,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,3,0,0]],
+  [[0,0,0,0,0,0,0,0,3,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,0,0,0,3,0,0,0,0],[0,0,0,0,0,0,0,3,0,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,0,0,0,0,0,0,3,0],[0,0,0,0,3,0,0,0,0,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0]],
+  [[0,0,0,0,3,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,3,0,0,0,0]],
+  [[0,0,3,0,0,0,0,0,0,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,3,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,0,0,0,0,0,0,3,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0],[0,0,0,0,0,3,0,0,0,0]],
+  [[0,0,3,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,3,0,0]],
+  [[0,0,0,0,0,0,0,0,3,0],[0,0,0,0,0,3,0,0,0,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,3,0,0,0,0,0]],
+  [[3,0,0,0,0,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,3,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,3,0,0,0,0,0,0,0],[0,3,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0]],
+  [[0,0,3,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,3,0,0,0,0,0]],
+  [[0,0,0,0,0,0,0,0,3,0],[0,3,0,0,0,0,0,0,0,0],[0,0,0,0,0,3,0,0,0,0],[0,0,0,0,0,0,0,3,0,0]],
+  [[0,0,0,0,0,0,0,0,3,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,3,0,0,0,0,0,0,0],[0,0,0,0,3,0,0,0,0,0],[0,0,0,3,0,0,0,0,0,0],[0,0,0,0,0,0,0,3,0,0]],
+  [[0,0,3,0,0,0,0,0,0,0],[0,0,0,0,3,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0],[0,0,0,0,0,0,0,0,0,3]],
+  [[0,0,3,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,3,0,0,0],[0,3,0,0,0,0,0,0,0,0]]
+];
+
+const ANIMALS=[
+  {name:"わんこ",catch:"一途に、全力で愛するタイプ",desc:"好きになったら一直線。相手のことをいつも考えてしまうし、寂しがりやな一面もある。それだけ深く人を愛せる、真っすぐな恋愛体質。",traits:["一途","献身的","感情豊か"],bg:"#EEF2EB",border:"#8FA882",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="32" rx="12" ry="11" fill="#8FA882" opacity="0.25"/><circle cx="18" cy="20" r="6" fill="#8FA882" opacity="0.4"/><circle cx="34" cy="20" r="6" fill="#8FA882" opacity="0.4"/><ellipse cx="26" cy="31" rx="10" ry="9" fill="#8FA882" opacity="0.55"/><circle cx="22.5" cy="29" r="2.2" fill="#4A5E42"/><circle cx="29.5" cy="29" r="2.2" fill="#4A5E42"/><ellipse cx="26" cy="33.5" rx="1.6" ry="1.1" fill="#4A5E42"/><path d="M14 18c0-3 1.8-5.5 4-6.5" stroke="#8FA882" stroke-width="2" stroke-linecap="round"/><path d="M38 18c0-3-1.8-5.5-4-6.5" stroke="#8FA882" stroke-width="2" stroke-linecap="round"/></svg>`},
+  {name:"ねこ",catch:"気まぐれで、でも惹きつけるタイプ",desc:"近づいたり離れたりするマイペースさが、逆に相手をドキドキさせる。自分のペースを大切にしながら、独特の魅力で人を引き寄せる。",traits:["マイペース","ミステリアス","魅力的"],bg:"#F5F0E8",border:"#C4B49A",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="31" rx="11" ry="10" fill="#C4B49A" opacity="0.3"/><path d="M17 22 L14 13 L21 19" fill="#C4B49A" opacity="0.5"/><path d="M35 22 L38 13 L31 19" fill="#C4B49A" opacity="0.5"/><ellipse cx="26" cy="30" rx="9" ry="8" fill="#C4B49A" opacity="0.55"/><ellipse cx="22.5" cy="28.5" rx="1.8" ry="2.2" fill="#7A6A52"/><ellipse cx="29.5" cy="28.5" rx="1.8" ry="2.2" fill="#7A6A52"/><ellipse cx="26" cy="33" rx="1.4" ry="1" fill="#7A6A52"/><path d="M20 31 Q26 33 32 31" stroke="#7A6A52" stroke-width="1" stroke-linecap="round"/></svg>`},
+  {name:"うさぎ",catch:"恋愛に全集中するタイプ",desc:"好きな人のことが頭から離れなくて、つい恋愛優先になりがち。嫉妬することもあるけど、それだけ本気で向き合っている証拠。",traits:["情熱的","嫉妬しやすい","恋愛優先"],bg:"#F7EDEA",border:"#D4A69A",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="32" rx="11" ry="10" fill="#D4A69A" opacity="0.3"/><ellipse cx="21" cy="16" rx="3.5" ry="7" fill="#D4A69A" opacity="0.45"/><ellipse cx="31" cy="16" rx="3.5" ry="7" fill="#D4A69A" opacity="0.45"/><ellipse cx="26" cy="31" rx="9" ry="8.5" fill="#D4A69A" opacity="0.55"/><circle cx="22.5" cy="29.5" r="2" fill="#8C5547"/><circle cx="29.5" cy="29.5" r="2" fill="#8C5547"/><ellipse cx="26" cy="33.5" rx="2.5" ry="1.5" fill="#8C5547"/></svg>`},
+  {name:"きつね",catch:"自由で、本音を隠すタイプ",desc:"束縛されるのが苦手で、自分のスペースをとても大切にする。なかなか本音を見せないけど、信頼した相手にはふと素顔を見せる瞬間がある。",traits:["自由奔放","クール","本音を隠す"],bg:"#FAF0E6",border:"#E8B89A",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="33" rx="11" ry="9" fill="#E8B89A" opacity="0.3"/><path d="M15 24 L12 12 L22 20" fill="#E8B89A" opacity="0.5"/><path d="M37 24 L40 12 L30 20" fill="#E8B89A" opacity="0.5"/><ellipse cx="26" cy="31" rx="10" ry="8.5" fill="#E8B89A" opacity="0.5"/><path d="M18 24 L26 28 L34 24" stroke="#C4855A" stroke-width="1.5" stroke-linecap="round"/><circle cx="22" cy="29" r="2" fill="#8C5E3A"/><circle cx="30" cy="29" r="2" fill="#8C5E3A"/><ellipse cx="26" cy="33" rx="1.5" ry="1" fill="#8C5E3A"/></svg>`},
+  {name:"こあら",catch:"一緒にいるだけで幸せなタイプ",desc:"ドキドキよりも「安心」を求めるタイプ。甘えるのが好きで、相手のそばにいるだけで満たされる。穏やかで居心地のいい関係を育てるのが得意。",traits:["甘えん坊","安心感重視","穏やか"],bg:"#EEF2EB",border:"#8FA882",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="17" cy="22" r="6" fill="#8FA882" opacity="0.4"/><circle cx="35" cy="22" r="6" fill="#8FA882" opacity="0.4"/><ellipse cx="26" cy="32" rx="12" ry="11" fill="#8FA882" opacity="0.3"/><ellipse cx="26" cy="31" rx="10" ry="9" fill="#8FA882" opacity="0.5"/><circle cx="22.5" cy="29" r="2" fill="#4A5E42"/><circle cx="29.5" cy="29" r="2" fill="#4A5E42"/><ellipse cx="26" cy="32" rx="3" ry="2" fill="#4A5E42" opacity="0.6"/></svg>`},
+  {name:"しろくま",catch:"慎重に、深く信頼を積み上げるタイプ",desc:"すぐには心を開かないけど、一度信頼した相手にはとことん誠実。長く続く安定した関係を大切にする、じっくりタイプ。",traits:["慎重","信頼重視","安定志向"],bg:"#F0F4F8",border:"#A8BCC8",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="18" cy="21" r="5.5" fill="#A8BCC8" opacity="0.5"/><circle cx="34" cy="21" r="5.5" fill="#A8BCC8" opacity="0.5"/><ellipse cx="26" cy="33" rx="13" ry="12" fill="#A8BCC8" opacity="0.25"/><ellipse cx="26" cy="32" rx="11" ry="10" fill="#A8BCC8" opacity="0.5"/><circle cx="22.5" cy="30" r="2" fill="#5A7A8C"/><circle cx="29.5" cy="30" r="2" fill="#5A7A8C"/><ellipse cx="26" cy="34" rx="3.5" ry="2.5" fill="#5A7A8C" opacity="0.5"/></svg>`},
+  {name:"りす",catch:"明るくて、軽やかに恋するタイプ",desc:"フレンドリーで人懐っこく、自然と距離が縮まっていく。束縛は苦手で、お互いの自由を尊重しながら楽しく付き合いたいタイプ。",traits:["フレンドリー","束縛苦手","ノリが良い"],bg:"#F5F0E8",border:"#C4B49A",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="31" rx="10" ry="9" fill="#C4B49A" opacity="0.4"/><circle cx="22" cy="23" r="3" fill="#C4B49A" opacity="0.6"/><circle cx="30" cy="23" r="3" fill="#C4B49A" opacity="0.6"/><path d="M33 18 Q40 10 38 22" fill="#C4B49A" opacity="0.5"/><circle cx="22.5" cy="29" r="1.8" fill="#7A6A52"/><circle cx="29.5" cy="29" r="1.8" fill="#7A6A52"/><ellipse cx="26" cy="32.5" rx="1.3" ry="0.9" fill="#7A6A52"/></svg>`},
+  {name:"ひつじ",catch:"尽くすことに喜びを感じるタイプ",desc:"相手のために何かしてあげることが自然と嬉しい。優しくて思いやりがある反面、自分を後回しにしすぎてしまうことも。",traits:["奉仕精神","優しい","自己犠牲しやすい"],bg:"#F7EDEA",border:"#D4A69A",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="20" cy="24" r="7" fill="#D4A69A" opacity="0.3"/><circle cx="32" cy="24" r="7" fill="#D4A69A" opacity="0.3"/><circle cx="26" cy="20" r="7" fill="#D4A69A" opacity="0.3"/><ellipse cx="26" cy="32" rx="10" ry="9" fill="#D4A69A" opacity="0.45"/><circle cx="22.5" cy="30" r="1.8" fill="#8C5547"/><circle cx="29.5" cy="30" r="1.8" fill="#8C5547"/><ellipse cx="26" cy="33.5" rx="2" ry="1.3" fill="#8C5547"/></svg>`},
+  {name:"ことり",catch:"ときめきを何より大切にするタイプ",desc:"恋愛はドラマチックであってほしい、というロマンチストな一面がある。ときめきが薄れると物足りなくなってしまうことも。",traits:["ロマンチスト","ときめき重視","ドラマチック"],bg:"#EEF2EB",border:"#8FA882",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="30" rx="10" ry="8" fill="#8FA882" opacity="0.3"/><path d="M16 28 Q10 20 18 18 Q20 14 26 16 Q32 14 34 18 Q42 20 36 28" fill="#8FA882" opacity="0.45"/><circle cx="22" cy="26" r="1.8" fill="#4A5E42"/><circle cx="30" cy="26" r="1.8" fill="#4A5E42"/><path d="M23 30 Q26 32 29 30" stroke="#4A5E42" stroke-width="1.2" stroke-linecap="round" fill="none"/><path d="M22 18 Q20 12 16 14" stroke="#8FA882" stroke-width="1.5" stroke-linecap="round"/><path d="M30 18 Q32 12 36 14" stroke="#8FA882" stroke-width="1.5" stroke-linecap="round"/></svg>`},
+  {name:"ぱんだ",catch:"安定重視で、長続きする恋愛が好きなタイプ",desc:"焦らずじっくり、マイペースに関係を育てるのが好き。派手な恋愛より、長く一緒にいられる相手との穏やかな日常に幸せを感じる。",traits:["マイペース","安定重視","長期的"],bg:"#F5F5F5",border:"#AAAAAA",
+    svg:`<svg width="52" height="52" viewBox="0 0 52 52" fill="none"><ellipse cx="26" cy="32" rx="12" ry="11" fill="#AAAAAA" opacity="0.2"/><circle cx="18" cy="21" r="6" fill="#555" opacity="0.25"/><circle cx="34" cy="21" r="6" fill="#555" opacity="0.25"/><ellipse cx="26" cy="31" rx="10" ry="9.5" fill="#FFFFFF" opacity="0.7"/><ellipse cx="26" cy="31" rx="10" ry="9.5" stroke="#AAAAAA" stroke-width="0.5"/><ellipse cx="22" cy="28.5" rx="3" ry="2.5" fill="#333" opacity="0.7"/><ellipse cx="30" cy="28.5" rx="3" ry="2.5" fill="#333" opacity="0.7"/><circle cx="22" cy="28.5" r="1.5" fill="#111"/><circle cx="30" cy="28.5" r="1.5" fill="#111"/><ellipse cx="26" cy="33.5" rx="2.5" ry="1.8" fill="#AAAAAA"/></svg>`}
+];
+
+const GAP_MSGS=[
+  {self:"うさぎ",friend:"きつね",msg:"自分では情熱的に恋をしているつもりでも、周りからは「クールで自由な人」に見えているみたい。ギャップ萌えの持ち主です！"},
+  {self:"ひつじ",friend:"ねこ",msg:"尽くしているつもりでも、友達の目には「マイペースで気まぐれ」に見えているよう。気づかれない優しさがありそう。"},
+  {self:"わんこ",friend:"ぱんだ",msg:"一途に燃えているのに、友達には「落ち着いてマイペース」に見えているみたい。内側の熱さが隠れているのかも。"},
+  {self:"ことり",friend:"りす",msg:"ロマンチックな理想を持ちながらも、友達には「明るくフレンドリーな人」として映っています。二面性が魅力です。"}
+];
+
+const STAR_LABELS=["","全然違う…","ちょっと当たってる","半分くらい","だいたい当たってる！","めちゃくちゃ当たってる！"];
+const GAS_URL='https://script.google.com/macros/s/AKfycbyQxzMBj9UdHduxnpUekKVxUIN5VU--xTADcUVlNdgavLAl9jMm-gA6FoQlU1uhvHAc/exec';
+
+let mode='self',curQ=0,answers=[],selfAnswers=null;
+let starVal=0,impVal='',resultAnimal=null;
+
+function showOnly(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));}
+
+function startMode(m){mode=m;curQ=0;answers=Array(QS.length).fill(null);showOnly('s-quiz');renderQ();}
+
+function startFriendMode(){
+  const code=new URLSearchParams(location.search).get('f');
+  if(code){try{selfAnswers=JSON.parse(atob(code));}catch(e){}}
+  mode='friend';curQ=0;answers=Array(QS.length).fill(null);showOnly('s-quiz');renderQ();
+}
+
+function renderQ(){
+  const q=QS[curQ],total=QS.length;
+  document.getElementById('prog').style.width=((curQ/total)*100)+'%';
+  document.getElementById('q-label').textContent=(mode==='friend'?'👀 友達として  ':'🙋 あなた自身  ')+`${curQ+1} / ${total}`;
+  document.getElementById('q-text').textContent=q.text;
+  const c=document.getElementById('q-options');c.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const b=document.createElement('button');
+    b.className='opt-btn'+(answers[curQ]===i?' selected':'');
+    b.textContent=opt;b.onclick=()=>selectOpt(i);c.appendChild(b);
+  });
+  document.getElementById('btn-next').disabled=answers[curQ]===null;
+  document.getElementById('btn-next').textContent=curQ===total-1?'結果へ →':'次へ →';
+  document.getElementById('btn-back').style.visibility=curQ===0?'hidden':'visible';
+}
+
+function selectOpt(i){
+  answers[curQ]=i;
+  document.querySelectorAll('.opt-btn').forEach((b,idx)=>b.classList.toggle('selected',idx===i));
+  document.getElementById('btn-next').disabled=false;
+}
+
+function nextQ(){if(answers[curQ]===null)return;if(curQ<QS.length-1){curQ++;renderQ();}else{finishQuiz();}}
+function prevQ(){if(curQ>0){curQ--;renderQ();}}
+
+function calcAnimal(ans){
+  const s=Array(10).fill(0);
+  DIRECT.forEach((q,qi)=>{if(ans[qi]!==null)q[ans[qi]].forEach((v,ai)=>s[ai]+=v);});
+  return s.indexOf(Math.max(...s));
+}
+
+function finishQuiz(){
+  if(mode==='self'){
+    selfAnswers=[...answers];
+    const url=location.href.split('?')[0]+'?f='+btoa(JSON.stringify(answers));
+    document.getElementById('share-url-text').textContent=url;
+    showOnly('s-share');
+  }else{showResult(answers,selfAnswers);}
+}
+
+function showSelfResult(){showResult(selfAnswers,null);}
+
+function animalBadge(a,size){
+  const s=size||96;
+  const r=size?Math.round(size*0.3):30;
+  return `<div style="width:${s}px;height:${s}px;border-radius:${r}px;background:${a.bg};border:0.5px solid ${a.border};margin:0 auto;display:flex;align-items:center;justify-content:center;">${a.svg}</div>`;
+}
+
+function showResult(friendAns,selfAns){
+  const si=selfAns?calcAnimal(selfAns):calcAnimal(friendAns);
+  const fi=friendAns?calcAnimal(friendAns):null;
+  const sA=ANIMALS[si],fA=fi!==null?ANIMALS[fi]:null;
+  resultAnimal=sA;
+
+  let html='';
+  if(fA&&selfAns){
+    html+=`<h2 style="font-size:18px;font-weight:500;margin-bottom:1.25rem;">2人の診断結果</h2>`;
+    html+=`<div class="duo-grid">
+      <div class="duo-card">${animalBadge(sA,56)}<div class="dname">${sA.name}</div><div class="dlabel">自分目線</div></div>
+      <div class="duo-card">${animalBadge(fA,56)}<div class="dname">${fA.name}</div><div class="dlabel">友達の目線</div></div>
+    </div>`;
+    if(si===fi){
+      html+=`<div class="gap-card"><div class="rlabel">✦ 自己認知、バッチリ一致！</div><div class="rbody">自分が思う自分と、友達の目に映るあなたがぴったり同じ。自己理解力がとても高いタイプです。</div></div>`;
+    }else{
+      const gm=GAP_MSGS.find(g=>g.self===sA.name&&g.friend===fA.name);
+      html+=`<div class="gap-card"><div class="rlabel">✦ ギャップ発見</div><div class="rbody">${gm?gm.msg:`自分では「${sA.name}タイプ」だと感じているけど、友達には「${fA.name}タイプ」に見えているみたい。そのギャップがあなたの隠れた魅力かも。`}</div></div>`;
+    }
+    html+=`<div class="result-card"><div class="rlabel">あなた本来の姿 — ${sA.name}タイプ</div><div style="font-size:11px;color:var(--blush-dark);margin-bottom:6px;">${sA.catch}</div><div class="rbody">${sA.desc}</div></div>`;
+    html+=`<div class="result-card"><div class="rlabel">友達の目に映るあなた — ${fA.name}タイプ</div><div style="font-size:11px;color:var(--blush-dark);margin-bottom:6px;">${fA.catch}</div><div class="rbody">${fA.desc}</div></div>`;
+  }else{
+    html+=`<div class="result-hero">${animalBadge(sA,96)}<div class="animal-name" style="margin-top:1rem;">${sA.name}タイプ</div><div class="animal-catch">${sA.catch}</div></div>`;
+    html+=`<div class="result-card"><div class="rlabel">あなたについて</div><div class="rbody">${sA.desc}</div><div class="tags">${sA.traits.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`;
+    if(!friendAns)html+=`<p class="hint">友達にシェアすると、2人の回答から<br>もっと深い診断ができます。</p>`;
+  }
+  html+=`<div style="margin-top:1rem;"><button class="btn-primary" onclick="goSurvey()">フィードバックを答える</button><button class="btn-ghost" onclick="restart()">もう一度やる</button></div>`;
+  document.getElementById('result-content').innerHTML=html;
+  showOnly('s-result');
+}
+
+function goSurvey(){
+  if(!resultAnimal)return;
+  const c=document.getElementById('match-chips');c.innerHTML='';
+  [...new Set([...resultAnimal.traits,'一途さ','ときめき重視','自由への意識','安心感重視','情熱の強さ'])].forEach(t=>{
+    const el=document.createElement('button');el.className='chip';el.textContent=t;
+    el.onclick=()=>el.classList.toggle('on');c.appendChild(el);
+  });
+  showOnly('s-survey');
+}
+
+function rateStar(v){
+  starVal=v;
+  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<v));
+  document.getElementById('star-label').textContent=STAR_LABELS[v];
+  checkSubmit();
+}
+
+function selectChip(el,group){
+  document.querySelectorAll(`[onclick*="'${group}'"]`).forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  if(group==='diff')document.getElementById('diff-wrap').style.display=(el.dataset.v!=='no')?'block':'none';
+  if(group==='imp')impVal=el.dataset.v;
+  checkSubmit();
+}
+
+function checkSubmit(){
+  const ok=starVal>0&&impVal;
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=!ok;btn.style.opacity=ok?'1':'0.35';btn.style.cursor=ok?'pointer':'default';
+}
+
+function submitSurvey(){
+  const match=[...document.querySelectorAll('#match-chips .chip.on')].map(c=>c.textContent).join(', ');
+  const data={animal:resultAnimal?resultAnimal.name:'不明',star:starVal,match:match||'なし',diff:document.getElementById('diff-text').value||'なし',impression:impVal};
+  const btn=document.getElementById('submit-btn');btn.textContent='送信中…';btn.disabled=true;
+  fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+    .then(()=>showOnly('s-thanks')).catch(()=>showOnly('s-thanks'));
+}
+
+function shareLine(){window.open('https://line.me/R/msg/text/?'+encodeURIComponent('私の恋愛タイプを診断してみて！あなたから見た私を選んでね💕 '+document.getElementById('share-url-text').textContent),'_blank');}
+function copyUrl(){navigator.clipboard.writeText(document.getElementById('share-url-text').textContent).then(()=>alert('URLをコピーしました！')).catch(()=>alert('コピーできませんでした。手動でコピーしてください。'));}
+
+function restart(){
+  selfAnswers=null;starVal=0;impVal='';resultAnimal=null;
+  history.replaceState(null,'',location.pathname);showOnly('s-top');
+}
+
+const code=new URLSearchParams(location.search).get('f');
+if(code){try{selfAnswers=JSON.parse(atob(code));}catch(e){}}
+</script>
+</body>
+</html>
